@@ -2,13 +2,9 @@ import torch
 import torch.nn.functional as F
 import numpy as np
 
-import PIL
 from PIL import Image
 import json
 
-import os
-
-import matplotlib.pyplot as plt
 from matplotlib.colors import LinearSegmentedColormap
 
 
@@ -17,21 +13,19 @@ from pytorch_grad_cam.guided_backprop import GuidedBackpropReLUModel
 from captum.attr import Saliency, GuidedGradCam, GuidedBackprop, LRP, IntegratedGradients
 from captum.attr import visualization as viz
 
+from pytorch_grad_cam.utils.model_targets import ClassifierOutputTarget
 from pytorch_grad_cam import EigenCAM, EigenGradCAM, LayerCAM
 from pytorch_grad_cam import GradCAM, GradCAMPlusPlus, GradCAMElementWise
 from pytorch_grad_cam import AblationCAM, RandomCAM, FullGrad ,HiResCAM, XGradCAM
 from pytorch_grad_cam.guided_backprop import GuidedBackpropReLUModel
-from pytorch_grad_cam.utils.image import show_cam_on_image, scale_cam_image
 
 from ScoreCAM.cam.scorecam import ScoreCAM
 
-from utils import set_device, pre_processing, show_prob
+from utils import set_device, pre_processing
 
 def numpy_to_image(arr):
-    # Convert the input Numpy array to a 8-bit unsigned integer array
     arr = arr * 255
     arr = np.uint8(arr)
-    # Convert the Numpy array to a PIL image
     img = Image.fromarray(np.transpose(arr, (1,2,0)))
     return img
 
@@ -116,30 +110,160 @@ def GBP(img_path, model):
     S_MS = np.transpose(S_MS.squeeze().cpu().detach().numpy(), (1,2,0))
     return S_MS
 
-def gradpp_cam_gen(model, img_path, target_layers):
-
-    tensor = torch.load(img_path)
+def gradpp_cam_gen_(model, img_path, _target):
+    # tensor = torch.load(img_path)
+    tensor = img_path
     tensor.to(set_device())
     if int(len(tensor.shape)) > 3:
         tensor = tensor
     else:
         tensor = tensor.unsqueeze(0)
-    cam = GradCAMPlusPlus(model, target_layers, use_cuda= True)
-    grayscale_cam = cam(tensor)
+    target = ClassifierOutputTarget(_target)
+    cam = GradCAMPlusPlus(model, target_layers = [model.layer4[-1]], use_cuda= True)
+    grayscale_cam = cam(tensor, targets=[target])
     return grayscale_cam
 
-def guidebp_gen(model, img_path):
+def eigen_cam_gen_(model, img_path, _target):
+    # tensor = torch.load(img_path)
+    tensor = img_path
+    tensor.to(set_device())
+    if int(len(tensor.shape)) > 3:
+        tensor = tensor
+    else:
+        tensor = tensor.unsqueeze(0)
+    target = ClassifierOutputTarget(_target) 
+    cam = EigenCAM(model, target_layers = [model.layer4[-1]], use_cuda= True)
+    grayscale_cam = cam(tensor, targets=[target])
+    return grayscale_cam
 
-    tensor = torch.load(img_path)
+def layer_cam_gen_(model, img_path, _target):
+    # tensor = torch.load(img_path)
+    tensor = img_path
+    tensor.to(set_device())
+    if int(len(tensor.shape)) > 3:
+        tensor = tensor
+    else:
+        tensor = tensor.unsqueeze(0) 
+    target = ClassifierOutputTarget(_target)
+    cam = LayerCAM(model, target_layers = [model.layer4[-1]], use_cuda= True)
+    grayscale_cam = cam(tensor, targets=[target])
+    return grayscale_cam
+
+def eigengrad_cam_gen_(model, img_path, _target):
+    # tensor = torch.load(img_path)
+    tensor = img_path
+    tensor.to(set_device())
+    if int(len(tensor.shape)) > 3:
+        tensor = tensor
+    else:
+        tensor = tensor.unsqueeze(0)
+    target = ClassifierOutputTarget(_target)
+    cam = EigenGradCAM(model, target_layers = [model.layer4[-1]], use_cuda= True)
+    grayscale_cam = cam(tensor, targets=[target])
+    return grayscale_cam
+
+def XGradCAM_cam_gen_(model, img_path, _target):
+    # tensor = torch.load(img_path)
+    tensor = img_path
+    tensor.to(set_device())
+    if int(len(tensor.shape)) > 3:
+        tensor = tensor
+    else:
+        tensor = tensor.unsqueeze(0)
+    target = ClassifierOutputTarget(_target)
+    cam = XGradCAM(model, target_layers = [model.layer4[-1]], use_cuda= True)
+    grayscale_cam = cam(tensor, targets=[target])
+    return grayscale_cam
+
+def gbp_gen_(model, img_path, _target):
+    # tensor = torch.load(img_path)
+    tensor = img_path
     tensor.to(set_device())
     if int(len(tensor.shape)) > 3:
         tensor = tensor
     else:
         tensor = tensor.unsqueeze(0)
     cam = GuidedBackpropReLUModel(model, use_cuda= True)
-    grayscale_cam = cam(tensor)[:, :, 0]
+    grayscale_cam = cam(tensor, _target)
     return grayscale_cam
 
+def fullgrad_cam_gen_(model, img_path, _target):
+    # tensor = torch.load(img_path)
+    tensor = img_path
+    tensor.to(set_device())
+    if int(len(tensor.shape)) > 3:
+        tensor = tensor
+    else:
+        tensor = tensor.unsqueeze(0)
+    target = ClassifierOutputTarget(_target) 
+    cam = FullGrad(model, target_layers = [model.layer4[-1]], use_cuda= True)
+    grayscale_cam = cam(tensor, targets=[target])
+    return grayscale_cam
+
+def hires_cam_gen_(model, img_path, _target):
+    # tensor = torch.load(img_path)
+    tensor = img_path
+    tensor.to(set_device())
+    if int(len(tensor.shape)) > 3:
+        tensor = tensor
+    else:
+        tensor = tensor.unsqueeze(0)
+    target = ClassifierOutputTarget(_target) 
+    cam = HiResCAM(model, target_layers = [model.layer4[-1]], use_cuda= True)
+    grayscale_cam = cam(tensor, targets=[target])
+    return grayscale_cam
+
+def random_cam_gen_(model, img_path, _target):
+    # tensor = torch.load(img_path)
+    tensor = img_path
+    tensor.to(set_device())
+    if int(len(tensor.shape)) > 3:
+        tensor = tensor
+    else:
+        tensor = tensor.unsqueeze(0)
+    target = ClassifierOutputTarget(_target) 
+    cam = RandomCAM(model, target_layers = [model.layer4[-1]], use_cuda= True)
+    grayscale_cam = cam(tensor, targets=[target])
+    return grayscale_cam
+
+def gradcamelementwise_cam_gen_(model, img_path, _target):
+    # tensor = torch.load(img_path)
+    tensor = img_path
+    tensor.to(set_device())
+    if int(len(tensor.shape)) > 3:
+        tensor = tensor
+    else:
+        tensor = tensor.unsqueeze(0)
+    target = ClassifierOutputTarget(_target) 
+    cam = GradCAMElementWise(model, target_layers = [model.layer4[-1]], use_cuda= True)
+    grayscale_cam = cam(tensor, targets=[target])
+    return grayscale_cam
+
+def grad_cam_gen_(model, img_path, _target):
+    # tensor = torch.load(img_path)
+    tensor = img_path
+    tensor.to(set_device())
+    if int(len(tensor.shape)) > 3:
+        tensor = tensor
+    else:
+        tensor = tensor.unsqueeze(0)
+    target = ClassifierOutputTarget(_target)
+    cam = GradCAM(model, target_layers = [model.layer4[-1]], use_cuda= True)
+    grayscale_cam = cam(tensor, targets=[target])
+    return grayscale_cam
+
+def ablation_cam_gen_(model, img_path, _target):
+    # tensor = torch.load(img_path)
+    tensor = img_path
+    tensor.to(set_device())
+    if int(len(tensor.shape)) > 3:
+        tensor = tensor
+    else:
+        tensor = tensor.unsqueeze(0)
+    target = ClassifierOutputTarget(_target)
+    cam = AblationCAM(model, target_layers = [model.layer4[-1]], use_cuda= True)
+    grayscale_cam = cam(tensor, targets=[target])
+    return grayscale_cam
 
 def Score_cam_gen(model, img_tensor):
     img_tensor = torch.load(img_tensor).to(set_device())
@@ -182,21 +306,6 @@ def GradientInput(img, model):
     GradientInput = np.multiply(img, grads)
         
     return GradientInput
-
-def GBP(img, model, generation_img=False, transform=False):
-    _input = img
-    predicted_label, prediction_score, _target = show_prob('./imagenet_class_index.json', model, _input,transform=False)
-    print('Predicted:', predicted_label, '(', prediction_score, ')')
-    GBP_EX = GuidedBackprop(model)
-    _input.requires_grad = True
-    GBP = GBP_EX.attribute(_input, target=_target).squeeze(0)
-    GBP = min_max_scaler(GBP.cpu())
-    
-    GBP = np.transpose(GBP.squeeze().cpu().detach().numpy(), (1,2,0))
-    if generation_img:
-        _ =  visualize_gen(GBP)
-        _.savefig('./GuidedBackprop.png')
-    return GBP
     
 def integrated_gradients(img_path, model, batch_blank_type='zero', iterations=50, flag = 0):
     img_path = np.transpose(img_path, (2,1,0))
@@ -250,7 +359,4 @@ def integrated_gradients(img_path, model, batch_blank_type='zero', iterations=50
             break
         grads = []
     F_IG = np.average(np.array(IG), axis=0)
-    # if generation_img:
-    #     _ = visualize_gen(F_IG, pre_processing(batch_x, norm=False,device='cuda').squeeze().cpu().detach().numpy())
-    #     _.savefig('./integrated_gradients.png')
     return F_IG
