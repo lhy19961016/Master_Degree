@@ -7,7 +7,7 @@ import torchattacks
 from tqdm import tqdm
 from utils import load_img, pre_processing, set_device, set_model
 
-from interpretability import gbp_gen_, gradpp_cam_gen_
+from InterMaker import gbp_gen_, gradpp_cam_gen_
 
 import numpy as np
 
