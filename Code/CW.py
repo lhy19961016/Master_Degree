@@ -1,5 +1,11 @@
 ## norm = L2, source from: https://github.com/Harry24k/CW-pytorch/blob/master/CW.ipynb
 
+torch.backends.cudnn.deterministic = True
+
+import torch 
+import torch.nn as nn
+import torch.nn.functional as F
+
 def cw_l2_attack(model, images, labels, targeted=False, c=1e-4, kappa=0, max_iter=1000, learning_rate=0.01) :
 
     images = images.to(device)     
