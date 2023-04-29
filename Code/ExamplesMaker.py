@@ -11,6 +11,8 @@ from InterMaker import gbp_gen_, gradpp_cam_gen_
 
 import numpy as np
 
+from CW import cw_l2_attack
+
 import os
 import re
 import random
@@ -105,8 +107,7 @@ if __name__ == '__main__':
     atk_5 = torchattacks.AutoAttack(model, norm='Linf', eps=1/255, version='standard', n_classes=1000,verbose=True)
     atk_5.set_normalization_used(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])
   
-    atk_6 = torchattacks.CW(model, c=1, kappa=0, steps=500, lr=0.01)
-    atk_6.set_normalization_used(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])
+    atk_6 = cw_l2_attack(model, images, labels, c=1, kappa=0, max_iter=500, learning_rate=0.01)
   
     attack_list = [atk_1, atk_2, atk_3, atk_4, atk_5, atk_6]
     name_attack_list = ['pgd', 'bim', 'mifgsm', 'fgsm', 'autoattack', 'cw']
